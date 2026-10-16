@@ -1,6 +1,6 @@
 import * as Crypto from 'expo-crypto';
 import { File, Paths } from 'expo-file-system';
-import Storage from 'expo-sqlite/kv-store';
+import Storage from './storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
@@ -74,7 +74,7 @@ export function persistPhoto(uri: string) {
 const isRemote = (uri: string) => uri.startsWith(API_URL);
 
 export function ReportsProvider({ children }: { children: ReactNode }) {
-  const { user, token } = useAuth();
+  const { user, token, refreshUser } = useAuth();
   const [reports, setReports] = useState<Report[]>(loadReports);
   const [materials, setMaterials] = useState<Material[]>(() => read<{ materials: Material[] }>(CATALOG_KEY, { materials: [] }).materials);
   const [defects, setDefects] = useState<Defect[]>(() => {
@@ -116,6 +116,7 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
     setSyncState((s) => ({ ...s, syncing: true }));
     let error: string | null = null;
     try {
+      await refreshUser();
       // 1) Envia o que está pendente, uma OS por vez.
       for (const r of [...latest.current]) {
         try {
@@ -216,7 +217,7 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
     } finally {
       running.current = false;
     }
-  }, [token, patch]);
+  }, [token, patch, refreshUser]);
 
   // Sincroniza ao entrar, ao voltar para o app e a cada minuto enquanto houver algo na fila.
   useEffect(() => {

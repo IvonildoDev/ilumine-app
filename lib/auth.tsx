@@ -7,12 +7,29 @@ const KEY = 'ilumine.sessao.v1';
 
 export type Me = ServerUser & { equipe_nome?: string | null };
 
+/** O que cada papel enxerga. coleta: só registra defeitos. campo: executa as OS da equipe. gestor/admin: tudo. */
+export type Access = { registrar: boolean; ordens: boolean; rota: boolean };
+
+export function accessFor(papel?: ServerUser['papel']): Access {
+  switch (papel) {
+    case 'coleta':
+      return { registrar: true, ordens: false, rota: false };
+    case 'campo':
+      return { registrar: false, ordens: false, rota: true };
+    default:
+      return { registrar: true, ordens: true, rota: true };
+  }
+}
+
 type Auth = {
   user: Me | null;
   token: string | null;
+  access: Access;
   loading: boolean;
   signIn: (email: string, senha: string) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Relê nome, papel e equipe no servidor (a sessão guardada pode estar desatualizada). */
+  refreshUser: () => Promise<void>;
 };
 
 const Ctx = createContext<Auth | null>(null);
@@ -71,9 +88,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const me = await api<Partial<Me>>('/me');
+      setSession((cur) => {
+        if (!cur) return cur;
+        const user: Me = { ...cur.user };
+        if (me.nome !== undefined) user.nome = me.nome;
+        if (me.papel !== undefined) user.papel = me.papel;
+        if (me.equipe_id !== undefined) user.equipe_id = me.equipe_id;
+        if (me.equipe_nome !== undefined) user.equipe_nome = me.equipe_nome;
+        const next = { ...cur, user };
+        SecureStore.setItemAsync(KEY, JSON.stringify(next)).catch(() => {});
+        return next;
+      });
+    } catch {}
+  }, []);
+
   const value = useMemo<Auth>(
-    () => ({ user: session?.user ?? null, token: session?.token ?? null, loading, signIn, signOut: clear }),
-    [session, loading, signIn, clear],
+    () => ({ user: session?.user ?? null, token: session?.token ?? null, access: accessFor(session?.user.papel), loading, signIn, signOut: clear, refreshUser }),
+    [session, loading, signIn, clear, refreshUser],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

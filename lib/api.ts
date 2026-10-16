@@ -85,4 +85,4 @@ export type ServerDefect = {
 };
 
 export type ServerMaterial = { id: string; nome: string; unidade: string };
-export type ServerUser = { id: string; nome: string; papel: 'campo' | 'gestor' | 'admin'; equipe_id: string | null };
+export type ServerUser = { id: string; nome: string; papel: 'coleta' | 'campo' | 'gestor' | 'admin'; equipe_id: string | null };

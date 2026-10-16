@@ -26,23 +26,24 @@ export function AppHeader({ title, hint }: { title: string; hint?: string }) {
           : 'Sincronizado';
   const icon = sync.syncing ? 'sync' : sync.pending > 0 || offline ? 'cloud-offline-outline' : sync.error ? 'alert-circle-outline' : 'cloud-done-outline';
 
+  const sair = () => {
+    if (sync.pending > 0) {
+      Alert.alert('Há OS não enviadas', `${sync.pending} ainda não chegaram ao servidor. Ao trocar de usuário elas serão perdidas. Sair mesmo assim?`, [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Sair', style: 'destructive', onPress: () => void signOut() },
+      ]);
+    } else {
+      Alert.alert('Sair da conta', 'Deseja sair?', [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Sair', style: 'destructive', onPress: () => void signOut() },
+      ]);
+    }
+  };
+
   const menu = () =>
     Alert.alert(user?.nome ?? 'Conta', sync.error ? `Último erro: ${sync.error}` : undefined, [
       { text: 'Sincronizar agora', onPress: () => void syncNow() },
-      {
-        text: 'Sair da conta',
-        style: 'destructive',
-        onPress: () => {
-          if (sync.pending > 0) {
-            Alert.alert('Há OS não enviadas', `${sync.pending} ainda não chegaram ao servidor. Ao trocar de usuário elas serão perdidas. Sair mesmo assim?`, [
-              { text: 'Cancelar', style: 'cancel' },
-              { text: 'Sair', style: 'destructive', onPress: () => void signOut() },
-            ]);
-          } else {
-            void signOut();
-          }
-        },
-      },
+      { text: 'Sair da conta', style: 'destructive', onPress: sair },
       { text: 'Fechar', style: 'cancel' },
     ]);
 
@@ -64,6 +65,19 @@ export function AppHeader({ title, hint }: { title: string; hint?: string }) {
           <Text style={[styles.statusText, (sync.pending > 0 || sync.error) && { color: t.accentText }]}>{label}</Text>
         </Pressable>
       </View>
+      {user?.nome ? (
+        <View style={styles.userRow}>
+          <Ionicons accessibilityLabel={`Usuário: ${user.nome}`} name="person-circle-outline" size={18} color={t.inkMuted} />
+          <Text style={styles.userName} numberOfLines={1}>
+            {user.nome}
+          </Text>
+          <View style={{ flex: 1 }} />
+          <Pressable style={styles.logout} onPress={sair} accessibilityRole="button" accessibilityLabel="Sair da conta" hitSlop={8}>
+            <Ionicons name="log-out-outline" size={18} color={t.ink} />
+            <Text style={styles.logoutText}>Sair</Text>
+          </Pressable>
+        </View>
+      ) : null}
       <Text style={styles.title} accessibilityRole="header">
         {title}
       </Text>
@@ -74,7 +88,11 @@ export function AppHeader({ title, hint }: { title: string; hint?: string }) {
 
 const makeStyles = (t: Theme) => ({
   wrap: { paddingHorizontal: 20, paddingBottom: 14, backgroundColor: t.bg, gap: 4 } as const,
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 } as const,
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 } as const,
+  userRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 } as const,
+  logout: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 999, backgroundColor: t.chip, paddingHorizontal: 12, minHeight: 36 } as const,
+  logoutText: { fontSize: 12, fontWeight: '700', color: t.ink } as const,
+  userName: { flexShrink: 1, fontSize: 14, fontWeight: '700', color: t.inkMuted } as const,
   logo: {
     width: 32,
     height: 32,

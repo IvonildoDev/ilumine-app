@@ -9,7 +9,6 @@ import {
   Image,
   KeyboardAvoidingView,
   Linking,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -155,8 +154,8 @@ export default function CadastroScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <AppHeader title="Nova OS" hint="Registre o defeito do poste em poucos toques." />
+    <KeyboardAvoidingView style={styles.flex} behavior="padding">
+      <AppHeader title="Registrar defeito" hint="Registre defeitos na iluminação em poucos toques." />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.progress} accessible accessibilityLabel={`${4 - missing.length} de 4 etapas concluídas`}>
           {[0, 1, 2, 3].map((i) => (
@@ -168,9 +167,9 @@ export default function CadastroScreen() {
           <View style={styles.saved} accessibilityLiveRegion="polite">
             <Ionicons name="bulb" size={26} color={t.onSuccessSoft} />
             <View style={styles.flex}>
-              <Text style={styles.savedTitle}>OS de {saved.code} aberta</Text>
+              <Text style={styles.savedTitle}>Defeito em {saved.code} registrado</Text>
               <Text style={styles.savedSub}>
-                {saved.defect} · salva neste aparelho e será enviada ao servidor. O local foi mantido para o próximo poste.
+                {saved.defect} · salva neste aparelho e será enviada ao servidor. O local foi mantido para o próximo registro.
               </Text>
             </View>
           </View>
@@ -207,7 +206,7 @@ export default function CadastroScreen() {
         {miss('GPS') && <Text style={styles.err}>Aguarde a localização GPS ou toque em atualizar.</Text>}
 
         <Card style={miss('plaqueta') ? styles.cardErr : undefined}>
-          <Text style={styles.sectionTitle}>Plaqueta do poste</Text>
+          <Text style={styles.sectionTitle}>Plaqueta</Text>
           <View style={styles.row}>
             <View style={styles.codeInput}>
               <Text style={styles.hash}>#</Text>
@@ -301,7 +300,7 @@ export default function CadastroScreen() {
         <Button
           size="lg"
           icon={missing.length ? 'ellipsis-horizontal-circle-outline' : 'checkmark-circle-outline'}
-          label={missing.length ? `Falta: ${missing.join(', ')}` : 'Abrir OS'}
+          label={missing.length ? `Falta: ${missing.join(', ')}` : 'Registrar defeito'}
           variant={missing.length ? 'secondary' : 'primary'}
           onPress={confirm}
         />
