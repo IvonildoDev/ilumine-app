@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles, useTheme, type Theme } from '@/constants/theme';
 import { useAuth } from '@/lib/auth';
 import { useReports } from '@/lib/store';
+import { ConfirmDialog } from './ConfirmDialog';
 
 /** Brand row on top, the screen's own title large beneath it. */
 export function AppHeader({ title, hint }: { title: string; hint?: string }) {
@@ -26,19 +28,9 @@ export function AppHeader({ title, hint }: { title: string; hint?: string }) {
           : 'Sincronizado';
   const icon = sync.syncing ? 'sync' : sync.pending > 0 || offline ? 'cloud-offline-outline' : sync.error ? 'alert-circle-outline' : 'cloud-done-outline';
 
-  const sair = () => {
-    if (sync.pending > 0) {
-      Alert.alert('Há OS não enviadas', `${sync.pending} ainda não chegaram ao servidor. Ao trocar de usuário elas serão perdidas. Sair mesmo assim?`, [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Sair', style: 'destructive', onPress: () => void signOut() },
-      ]);
-    } else {
-      Alert.alert('Sair da conta', 'Deseja sair?', [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Sair', style: 'destructive', onPress: () => void signOut() },
-      ]);
-    }
-  };
+  const [confirmando, setConfirmando] = useState(false);
+  const sair = () => setConfirmando(true);
+  const temPendentes = sync.pending > 0;
 
   const menu = () =>
     Alert.alert(user?.nome ?? 'Conta', sync.error ? `Último erro: ${sync.error}` : undefined, [
@@ -82,6 +74,25 @@ export function AppHeader({ title, hint }: { title: string; hint?: string }) {
         {title}
       </Text>
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
+      <ConfirmDialog
+        visible={confirmando}
+        icon={temPendentes ? 'warning-outline' : 'log-out-outline'}
+        tone={temPendentes ? 'danger' : 'warning'}
+        title={temPendentes ? 'Há OS não enviadas' : 'Sair da conta?'}
+        message={
+          temPendentes
+            ? 'Ao sair, o que ainda não chegou ao servidor será perdido. Aguarde a sincronização ou saia mesmo assim.'
+            : `${user?.nome ? `${user.nome}, você` : 'Você'} precisará entrar de novo para continuar.`
+        }
+        highlight={temPendentes ? `${sync.pending} ${sync.pending === 1 ? 'OS pendente' : 'OS pendentes'}` : undefined}
+        confirmLabel={temPendentes ? 'Sair mesmo assim' : 'Sair'}
+        cancelLabel={temPendentes ? 'Voltar' : 'Cancelar'}
+        onCancel={() => setConfirmando(false)}
+        onConfirm={() => {
+          setConfirmando(false);
+          void signOut();
+        }}
+      />
     </View>
   );
 }
